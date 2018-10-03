@@ -1,32 +1,44 @@
-﻿using CursoOnline.Dominio.Cursos;
+﻿using Bogus;
+using CursoOnline.Dominio.Cursos;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 namespace CursoOnline.Dominio.Test.Cursos
 {
-    public class ArmazenarCursoTest
+    public class ArmazenadorDeCursoTest
     {
+        private CursoDTO _cursoDTO;
+        private Mock<ICursoRepositorio> _cursoRepositorioMock;
+        private ArmazenadorDeCurso _armazenadorDeCurso;
+
+        public ArmazenadorDeCursoTest()
+        {
+            var fake = new Faker();
+            _cursoDTO = new CursoDTO
+            {
+                Nome = fake.Random.Word(),
+                Descricao = fake.Lorem.Paragraph(),
+                CargaHoraria = fake.Random.Double(50,1000),
+                PublicoAlvoId = 1,
+                Valor = fake.Random.Double(800,1000)
+            };
+
+            _cursoRepositorioMock = new Mock<ICursoRepositorio>();
+            _armazenadorDeCurso = new ArmazenadorDeCurso(_cursoRepositorioMock.Object);
+
+        }
         [Fact]
         public void DeveAdicionarCurso()
         {
+          
+            _armazenadorDeCurso.Armazenar(_cursoDTO);
 
-            var cursoDTO = new CursoDTO
-            {
-                Nome = "Informatica",
-                Descricao = "Uma descrição",
-                CargaHoraria = 80,
-                PublicoAlvoId = 1,
-                Valor = 850.00
-            };
-            var cursoRepositorioMock = new Mock<ICursoRepositorio>();
-            var armazenadorDeCurso = new ArmazenadorDeCurso(cursoRepositorioMock.Object);
-
-            armazenadorDeCurso.Armazenar(cursoDTO);
-
-            cursoRepositorioMock.Verify(r => r.Adicionar(It.IsAny<Curso>()));
+            _cursoRepositorioMock.Verify(r => r.Adicionar(
+                It.Is<Curso>(
+                    c => c.Nome == _cursoDTO.Nome &&
+                    c.Descricao == _cursoDTO.Descricao
+                )
+            ));
         }
     }
 
@@ -55,7 +67,7 @@ namespace CursoOnline.Dominio.Test.Cursos
     {
         public string Nome { get; set; }
         public string Descricao { get; set; }
-        public int CargaHoraria { get; set; }
+        public double CargaHoraria { get; set; }
         public int PublicoAlvoId { get; set; }
         public double Valor { get; set; }
 
