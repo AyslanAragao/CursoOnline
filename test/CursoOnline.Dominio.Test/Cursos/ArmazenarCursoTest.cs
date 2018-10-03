@@ -1,6 +1,8 @@
 ﻿using Bogus;
 using CursoOnline.Dominio.Cursos;
+using CursoOnline.Dominio.Test._Util;
 using Moq;
+using System;
 using Xunit;
 
 namespace CursoOnline.Dominio.Test.Cursos
@@ -18,9 +20,9 @@ namespace CursoOnline.Dominio.Test.Cursos
             {
                 Nome = fake.Random.Word(),
                 Descricao = fake.Lorem.Paragraph(),
-                CargaHoraria = fake.Random.Double(50,1000),
-                PublicoAlvoId = 1,
-                Valor = fake.Random.Double(800,1000)
+                CargaHoraria = fake.Random.Double(50, 1000),
+                PublicoAlvo = "Estudante",
+                Valor = fake.Random.Double(800, 1000)
             };
 
             _cursoRepositorioMock = new Mock<ICursoRepositorio>();
@@ -30,7 +32,7 @@ namespace CursoOnline.Dominio.Test.Cursos
         [Fact]
         public void DeveAdicionarCurso()
         {
-          
+
             _armazenadorDeCurso.Armazenar(_cursoDTO);
 
             _cursoRepositorioMock.Verify(r => r.Adicionar(
@@ -39,6 +41,16 @@ namespace CursoOnline.Dominio.Test.Cursos
                     c.Descricao == _cursoDTO.Descricao
                 )
             ));
+        }
+
+        [Fact]
+        public void NaoDeveInformarPublicoAlvoInvalido()
+        {
+            var publicoAlvoInvalido = "Medico";
+            _cursoDTO.PublicoAlvo = publicoAlvoInvalido;
+
+            Assert.Throws<ArgumentException>(() => _armazenadorDeCurso.Armazenar(_cursoDTO))
+                .ComMensagem("Publico Alvo Invalido!");
         }
     }
 
@@ -57,8 +69,12 @@ namespace CursoOnline.Dominio.Test.Cursos
 
         public void Armazenar(CursoDTO cursoDTO)
         {
-            var curso = new Curso(cursoDTO.Nome, cursoDTO.Descricao, cursoDTO.CargaHoraria, PublicoAlvo.Estudante, cursoDTO.Valor);
+            Enum.TryParse(typeof(PublicoAlvo), cursoDTO.PublicoAlvo, out var publicoAlvo);
 
+            if (publicoAlvo == null)
+                throw new ArgumentException("Publico Alvo Invalido!");
+
+            var curso = new Curso(cursoDTO.Nome, cursoDTO.Descricao, cursoDTO.CargaHoraria, (PublicoAlvo)publicoAlvo, cursoDTO.Valor);
             _cursoRepositorioMock.Adicionar(curso);
         }
     }
@@ -68,7 +84,7 @@ namespace CursoOnline.Dominio.Test.Cursos
         public string Nome { get; set; }
         public string Descricao { get; set; }
         public double CargaHoraria { get; set; }
-        public int PublicoAlvoId { get; set; }
+        public string PublicoAlvo { get; set; }
         public double Valor { get; set; }
 
     }
